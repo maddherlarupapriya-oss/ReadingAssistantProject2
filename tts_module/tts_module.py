@@ -6,10 +6,12 @@ import time
 import sys
 from config.config import AUDIO_FILE
 
+
 async def edge_save(text, voice, outfile, rate):
     comm = edge_tts.Communicate(text, voice, rate=rate)
     await comm.save(outfile)
     return outfile
+
 
 def pyttsx3_save(text, outfile):
     engine = pyttsx3.init()
@@ -17,6 +19,7 @@ def pyttsx3_save(text, outfile):
     engine.save_to_file(text, outfile)
     engine.runAndWait()
     return outfile
+
 
 def generate_audio_with_fallback(text, voice, rate):
     try:
@@ -30,6 +33,7 @@ def generate_audio_with_fallback(text, voice, rate):
         except Exception as e2:
             print(f"pyttsx3 also failed: {e2}")
             return None, None
+
 
 def compute_word_timings(text, total_duration):
     words = text.split()
@@ -58,6 +62,7 @@ def compute_word_timings(text, total_duration):
     
     return timings
 
+
 def format_karaoke_line(words, idx):
     line_parts = []
     words_per_line = 10
@@ -80,6 +85,7 @@ def format_karaoke_line(words, idx):
     
     return line
 
+
 def play_karaoke(audio_file, text):
     try:
         pygame.mixer.quit()
@@ -91,18 +97,26 @@ def play_karaoke(audio_file, text):
     try:
         sound = pygame.mixer.Sound(audio_file)
     except Exception:
+        # Fallback to music player
         pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
         
         print("\n" + "="*80)
         print("🎵 TEXT HIGHLIGHTING MODE")
         print("="*80)
-        print("\n" + text[:500] + "...\n")
-        print("(Audio playing - highlighting not available for this format)")
-        print("="*80 + "\n")
+        print("\nPlaying audio... (Highlighting not available for this format)")
+        print("\n⏹ Audio will play to completion")
+        print("   (Press Ctrl+C if you need to stop early)\n")
         
-        while pygame.mixer.music.get_busy():
-            time.sleep(0.1)
+        try:
+            while pygame.mixer.music.get_busy():
+                time.sleep(0.1)
+        except KeyboardInterrupt:
+            pygame.mixer.music.stop()
+            print("\n⏹ Stopped by user - Exiting immediately\n")
+            sys.exit(0)
+        
+        print("="*80 + "\n")
         return
     
     total_duration = sound.get_length()
@@ -116,39 +130,62 @@ def play_karaoke(audio_file, text):
     
     timings = compute_word_timings(text, total_duration)
     
-    channel = sound.play()
-    start_time = time.time()
-    current_word_idx = 0
-    last_displayed_idx = -1
-    
     print("\n" + "="*80)
     print("🎵 TEXT HIGHLIGHTING MODE - Follow along with the highlighted words!")
     print("="*80)
     print("\nControls: Press Ctrl+C to stop\n")
     
+    channel = sound.play()
+    start_time = time.time()
+    current_word_idx = 0
+    last_displayed_idx = -1
+    first_display = True
+    
     try:
         while channel.get_busy():
             elapsed = time.time() - start_time
             
+            # Update current word index based on timing
             while current_word_idx < len(timings) and elapsed >= timings[current_word_idx]:
                 current_word_idx += 1
             
             display_idx = min(current_word_idx, len(words) - 1)
             
+            # Only update display when word changes
             if display_idx != last_displayed_idx:
-                line = format_karaoke_line(words, display_idx)
+                # Calculate progress
                 progress = (display_idx / len(words)) * 100
-                print(f"\r{' '*120}\r[{progress:5.1f}%] {line}", end='', flush=True)
+                progress_bar = "█" * int(progress / 2) + "░" * (50 - int(progress / 2))
+                
+                # Format the text line
+                line = format_karaoke_line(words, display_idx)
+                
+                # Clear previous lines and print new content
+                if not first_display:
+                    # Move cursor up 3 lines and clear from cursor to end
+                    sys.stdout.write('\033[3A')
+                    sys.stdout.write('\033[J')
+                else:
+                    first_display = False
+                
+                # Print the progress bar and text
+                sys.stdout.write(f"[{progress:5.1f}%] {progress_bar}\n\n{line}\n")
+                sys.stdout.flush()
+                
                 last_displayed_idx = display_idx
             
             time.sleep(0.05)
+    
     except KeyboardInterrupt:
         channel.stop()
-        print("\n\n⏹ Stopped by user")
+        print("\n\n⏹ Stopped by user - Exiting immediately\n")
+        sys.exit(0)
     
-    print("\n\n" + "="*80)
+    # Playback finished normally
+    print("\n" + "="*80)
     print("✅ Playback complete!")
     print("="*80 + "\n")
+
 
 def play_with_controls(audio_file):
     try:
@@ -170,47 +207,53 @@ def play_with_controls(audio_file):
     print("  [H] Text Highlight [Q] Quit")
     print("="*80)
     
-    while True:
-        cmd = input("\nEnter command: ").strip().lower()
-        
-        if cmd == "p":
-            pygame.mixer.music.pause()
-            print("⏸  Paused")
-        elif cmd == "r":
-            pygame.mixer.music.unpause()
-            print("▶  Resumed")
-        elif cmd == "s":
-            pygame.mixer.music.stop()
-            print("⏹  Stopped")
-        elif cmd == "y":
-            pygame.mixer.music.stop()
-            pygame.mixer.music.play()
-            print("🔄 Replaying from start")
-        elif cmd == "w":
-            try:
-                pos = pygame.mixer.music.get_pos() / 1000.0
-                rewind = max(0, pos - 5)
-                pygame.mixer.music.play(start=rewind)
-                print("⏪ Rewound 5 seconds")
-            except Exception:
-                print("⚠  Rewind not supported for this audio format")
-        elif cmd == "f":
-            try:
-                pos = pygame.mixer.music.get_pos() / 1000.0
-                forward = pos + 5
-                pygame.mixer.music.play(start=forward)
-                print("⏩ Forwarded 5 seconds")
-            except Exception:
-                print("⚠  Forward not supported for this audio format")
-        elif cmd == "h":
-            pygame.mixer.music.stop()
-            print("🎤 Switching to text highlighting mode...")
-            return "highlight"
-        elif cmd == "q":
-            pygame.mixer.music.stop()
-            print("👋 Goodbye!")
-            break
-        else:
-            print("❌ Invalid command. Try [P/R/S/Y/W/F/H/Q]")
+    try:
+        while True:
+            cmd = input("\nEnter command: ").strip().lower()
+            
+            if cmd == "p":
+                pygame.mixer.music.pause()
+                print("⏸  Paused")
+            elif cmd == "r":
+                pygame.mixer.music.unpause()
+                print("▶  Resumed")
+            elif cmd == "s":
+                pygame.mixer.music.stop()
+                print("⏹  Stopped")
+            elif cmd == "q":
+                pygame.mixer.music.stop()
+                print("👋 Exiting immediately...")
+                sys.exit(0)
+            elif cmd == "y":
+                pygame.mixer.music.stop()
+                pygame.mixer.music.play()
+                print("🔄 Replaying from start")
+            elif cmd == "w":
+                try:
+                    pos = pygame.mixer.music.get_pos() / 1000.0
+                    rewind = max(0, pos - 5)
+                    pygame.mixer.music.play(start=rewind)
+                    print("⏪ Rewound 5 seconds")
+                except Exception:
+                    print("⚠  Rewind not supported for this audio format")
+            elif cmd == "f":
+                try:
+                    pos = pygame.mixer.music.get_pos() / 1000.0
+                    forward = pos + 5
+                    pygame.mixer.music.play(start=forward)
+                    print("⏩ Forwarded 5 seconds")
+                except Exception:
+                    print("⚠  Forward not supported for this audio format")
+            elif cmd == "h":
+                pygame.mixer.music.stop()
+                print("🎤 Switching to text highlighting mode...")
+                return "highlight"
+            else:
+                print("❌ Invalid command. Try [P/R/S/Y/W/F/H/Q]")
+    
+    except KeyboardInterrupt:
+        pygame.mixer.music.stop()
+        print("\n\n⏹ Stopped by user - Exiting immediately\n")
+        sys.exit(0)
     
     return None
