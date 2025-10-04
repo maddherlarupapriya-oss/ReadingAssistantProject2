@@ -53,42 +53,71 @@ def main():
     show_preview(cleaned)
 
     profile = load_profile()
+    
+    # Extended voice options
     voices = {
-        "1": "en-US-AriaNeural",
-        "2": "en-US-GuyNeural",
-        "3": "en-GB-LibbyNeural",
-        "4": "en-IN-NeerjaNeural",
-        "5": "en-IN-PrabhatNeural"
+        "1": ("en-US-AriaNeural", "US English - Aria (Female)"),
+        "2": ("en-US-GuyNeural", "US English - Guy (Male)"),
+        "3": ("en-GB-LibbyNeural", "British English - Libby (Female)"),
+        "4": ("en-GB-RyanNeural", "British English - Ryan (Male)"),
+        "5": ("en-IN-NeerjaNeural", "Indian English - Neerja (Female)"),
+        "6": ("en-IN-PrabhatNeural", "Indian English - Prabhat (Male)"),
+        "7": ("en-AU-NatashaNeural", "Australian English - Natasha (Female)"),
+        "8": ("en-AU-WilliamNeural", "Australian English - William (Male)"),
+        "9": ("en-US-JennyNeural", "US English - Jenny (Female)"),
+        "10": ("en-US-EricNeural", "US English - Eric (Male)")
     }
+    
     print("\nAvailable Voices:")
-    for k, v in voices.items():
-        print(k, v)
-    vchoice = input("Choose voice number (enter to keep saved): ").strip()
+    for k, (voice_id, description) in voices.items():
+        print(f"{k}. {description}")
+    
+    vchoice = input("\nChoose voice number (press Enter to keep saved): ").strip()
     if vchoice in voices:
-        profile["voice"] = voices[vchoice]
-    rchoice = input("Enter speech speed (+20% / -20% / 0 for normal, enter to keep saved): ").strip()
-    if rchoice:
-        if rchoice == "0":
-            profile["rate"] = "+0%"
-        elif not rchoice.endswith("%"):
-            profile["rate"] = f"{rchoice}%"
-        else:
-            profile["rate"] = rchoice
+        profile["voice"] = voices[vchoice][0]
+    
+    # Speed options with better format
+    speed_options = {
+        "1": ("-50%", "0.5x (Half speed)"),
+        "2": ("-25%", "0.75x (Slower)"),
+        "3": ("+0%", "1.0x (Normal)"),
+        "4": ("+25%", "1.25x (Faster)"),
+        "5": ("+50%", "1.5x (Fast)"),
+        "6": ("+75%", "1.75x (Very fast)"),
+        "7": ("+100%", "2.0x (Double speed)")
+    }
+    
+    print("\nSpeech Speed Options:")
+    for k, (rate, description) in speed_options.items():
+        print(f"{k}. {description}")
+    
+    speed_choice = input("\nChoose speed (press Enter to keep saved): ").strip()
+    if speed_choice in speed_options:
+        profile["rate"] = speed_options[speed_choice][0]
 
     audio_file, engine_used = generate_audio_with_fallback(cleaned, profile["voice"], profile["rate"])
     if not audio_file:
         print("TTS generation failed")
         return
 
-    use_k = input("Play with karaoke highlighting? (y/n, default n): ").strip().lower() == "y"
-    if use_k:
+    print("\n" + "="*80)
+    print("🎵 PLAYBACK MODE SELECTION")
+    print("="*80)
+    print("\nChoose how you want to listen:")
+    print("  1. Standard Playback (with controls: pause, rewind, forward, etc.)")
+    print("  2. Text Highlighting (follow along as words are highlighted)")
+    print("="*80)
+    
+    playback_choice = input("\nEnter choice (1 or 2, default 1): ").strip()
+    
+    if playback_choice == "2":
         play_karaoke(audio_file, cleaned)
     else:
         res = play_with_controls(audio_file)
-        if res == "karaoke":
+        if res == "highlight":
             play_karaoke(audio_file, cleaned)
 
-    save = input("Save these settings for next time? (y/n): ").strip().lower() == "y"
+    save = input("\nSave these settings for next time? (y/n): ").strip().lower() == "y"
     if save:
         save_profile(profile)
         print("Preferences saved")

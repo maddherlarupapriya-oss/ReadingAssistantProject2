@@ -22,11 +22,13 @@ def generate_audio_with_fallback(text, voice, rate):
     try:
         asyncio.run(edge_save(text, voice, AUDIO_FILE, rate))
         return AUDIO_FILE, "edge"
-    except Exception:
+    except Exception as e:
+        print(f"Edge TTS failed: {e}, trying pyttsx3...")
         try:
             pyttsx3_save(text, AUDIO_FILE)
             return AUDIO_FILE, "pyttsx3"
-        except Exception:
+        except Exception as e2:
+            print(f"pyttsx3 also failed: {e2}")
             return None, None
 
 def compute_word_timings(text, total_duration):
@@ -58,7 +60,7 @@ def compute_word_timings(text, total_duration):
 
 def format_karaoke_line(words, idx):
     line_parts = []
-    words_per_line = 8
+    words_per_line = 10
     
     start_idx = max(0, (idx // words_per_line) * words_per_line)
     end_idx = min(len(words), start_idx + words_per_line)
@@ -67,14 +69,14 @@ def format_karaoke_line(words, idx):
         if i == idx:
             line_parts.append(f"\033[97;44m {words[i]} \033[0m")
         elif i < idx:
-            line_parts.append(f"\033[2m{words[i]}\033[0m")
+            line_parts.append(f"\033[90m{words[i]}\033[0m")
         else:
             line_parts.append(words[i])
     
     line = " ".join(line_parts)
     
-    if len(line) > 100:
-        line = line[:97] + "..."
+    if len(line) > 120:
+        line = line[:117] + "..."
     
     return line
 
@@ -91,6 +93,14 @@ def play_karaoke(audio_file, text):
     except Exception:
         pygame.mixer.music.load(audio_file)
         pygame.mixer.music.play()
+        
+        print("\n" + "="*80)
+        print("🎵 TEXT HIGHLIGHTING MODE")
+        print("="*80)
+        print("\n" + text[:500] + "...\n")
+        print("(Audio playing - highlighting not available for this format)")
+        print("="*80 + "\n")
+        
         while pygame.mixer.music.get_busy():
             time.sleep(0.1)
         return
@@ -111,28 +121,34 @@ def play_karaoke(audio_file, text):
     current_word_idx = 0
     last_displayed_idx = -1
     
-    print("\n" + "="*70)
-    print("KARAOKE MODE - Follow the highlighted word")
-    print("="*70 + "\n")
+    print("\n" + "="*80)
+    print("🎵 TEXT HIGHLIGHTING MODE - Follow along with the highlighted words!")
+    print("="*80)
+    print("\nControls: Press Ctrl+C to stop\n")
     
-    while channel.get_busy():
-        elapsed = time.time() - start_time
-        
-        while current_word_idx < len(timings) and elapsed >= timings[current_word_idx]:
-            current_word_idx += 1
-        
-        display_idx = min(current_word_idx, len(words) - 1)
-        
-        if display_idx != last_displayed_idx:
-            line = format_karaoke_line(words, display_idx)
-            print(f"\r{' '*100}\r{line}", end='', flush=True)
-            last_displayed_idx = display_idx
-        
-        time.sleep(0.05)
+    try:
+        while channel.get_busy():
+            elapsed = time.time() - start_time
+            
+            while current_word_idx < len(timings) and elapsed >= timings[current_word_idx]:
+                current_word_idx += 1
+            
+            display_idx = min(current_word_idx, len(words) - 1)
+            
+            if display_idx != last_displayed_idx:
+                line = format_karaoke_line(words, display_idx)
+                progress = (display_idx / len(words)) * 100
+                print(f"\r{' '*120}\r[{progress:5.1f}%] {line}", end='', flush=True)
+                last_displayed_idx = display_idx
+            
+            time.sleep(0.05)
+    except KeyboardInterrupt:
+        channel.stop()
+        print("\n\n⏹ Stopped by user")
     
-    print("\n\n" + "="*70)
-    print("Playback complete!")
-    print("="*70 + "\n")
+    print("\n\n" + "="*80)
+    print("✅ Playback complete!")
+    print("="*80 + "\n")
 
 def play_with_controls(audio_file):
     try:
@@ -145,21 +161,27 @@ def play_with_controls(audio_file):
     pygame.mixer.music.play()
     
     print("\n" + "="*80)
-    print("PLAYBACK CONTROLS")
+    print("🎵 PLAYBACK CONTROLS")
+    print("="*80)
+    print("\nCommands:")
+    print("  [P] Pause          [R] Resume")
+    print("  [S] Stop           [Y] Replay from start")
+    print("  [W] Rewind 5s      [F] Forward 5s")
+    print("  [H] Text Highlight [Q] Quit")
     print("="*80)
     
     while True:
-        cmd = input("\n[P]ause [R]esume [S]top [Y]Replay [W]Rewind 5s [K]Karaoke [Q]Quit: ").strip().lower()
+        cmd = input("\nEnter command: ").strip().lower()
         
         if cmd == "p":
             pygame.mixer.music.pause()
-            print("⏸ Paused")
+            print("⏸  Paused")
         elif cmd == "r":
             pygame.mixer.music.unpause()
-            print("▶ Resumed")
+            print("▶  Resumed")
         elif cmd == "s":
             pygame.mixer.music.stop()
-            print("⏹ Stopped")
+            print("⏹  Stopped")
         elif cmd == "y":
             pygame.mixer.music.stop()
             pygame.mixer.music.play()
@@ -171,16 +193,24 @@ def play_with_controls(audio_file):
                 pygame.mixer.music.play(start=rewind)
                 print("⏪ Rewound 5 seconds")
             except Exception:
-                print("⚠ Rewind not supported for this audio format")
-        elif cmd == "k":
+                print("⚠  Rewind not supported for this audio format")
+        elif cmd == "f":
+            try:
+                pos = pygame.mixer.music.get_pos() / 1000.0
+                forward = pos + 5
+                pygame.mixer.music.play(start=forward)
+                print("⏩ Forwarded 5 seconds")
+            except Exception:
+                print("⚠  Forward not supported for this audio format")
+        elif cmd == "h":
             pygame.mixer.music.stop()
-            print("🎤 Switching to karaoke mode...")
-            return "karaoke"
+            print("🎤 Switching to text highlighting mode...")
+            return "highlight"
         elif cmd == "q":
             pygame.mixer.music.stop()
             print("👋 Goodbye!")
             break
         else:
-            print("❌ Invalid command. Try again.")
+            print("❌ Invalid command. Try [P/R/S/Y/W/F/H/Q]")
     
     return None
