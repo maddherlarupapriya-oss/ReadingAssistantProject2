@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Reading Assistant</title>
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/opendyslexic');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 500px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+        
+        .logo { font-size: 64px; margin-bottom: 20px; }
+        h1 { font-size: 32px; color: #2c3e50; margin-bottom: 10px; line-height: 1.4; }
+        .tagline { font-size: 18px; color: #7f8c8d; margin-bottom: 40px; line-height: 1.6; }
+        
+        .quick-login {
+            padding: 25px;
+            background: #e8f5e9;
+            border-radius: 15px;
+            border: 3px solid #4CAF50;
+            margin-bottom: 25px;
+        }
+        
+        .quick-login p { 
+            font-size: 18px; 
+            margin-bottom: 20px; 
+            color: #2e7d32; 
+            font-weight: bold; 
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.1);
+        }
+        
+        .btn-quick-login {
+            width: 100%;
+            padding: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+        }
+        
+        .btn-quick-login:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76,175,80,0.4);
+        }
+        
+        .other-options {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .other-options p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .link-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .link-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .link-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .form-container { display: none; }
+        .form-container.active { display: block; }
+        
+        label {
+            display: block;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #34495e;
+        }
+        
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            margin-top: 10px;
+        }
+        
+        .btn-submit:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .alert {
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .alert-success { background: #d4edda; color: #155724; border: 2px solid #4CAF50; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 2px solid #f44336; }
+        .hidden { display: none; }
+        
+        .back-link {
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">📖</div>
+        <h1>Reading Assistant</h1>
+        <p class="tagline">Your accessible reading companion</p>
+        
+        <div id="alertBox" class="alert hidden"></div>
+        
+        <!-- Quick Login (Default View) -->
+        <div id="quickLoginView">
+            {% if last_user_name %}
+            <div class="quick-login">
+                <p>Welcome back, {{ last_user_name }}!</p>
+                <form onsubmit="quickLogin(event)">
+                    <div class="form-group">
+                        <input type="password" id="quickPassword" placeholder="Enter your password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn-quick-login">Continue as {{ last_user_name }}</button>
+                </form>
+            </div>
+            
+            <div class="other-options">
+                <p>Not {{ last_user_name }}?</p>
+                <div class="link-buttons">
+                    <a href="#" onclick="showLoginForm(); return false;" class="link-btn">Login with Different Account</a>
+                    <a href="#" onclick="showRegisterForm(); return false;" class="link-btn">Register New Account</a>
+                </div>
+            </div>
+            {% else %}
+            <!-- No previous user - show login/register options -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showLoginForm()">Login</button>
+                <button class="tab-btn" onclick="showRegisterForm()">Register</button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Login Form (Hidden initially if quick login available) -->
+        <div id="loginFormView" class="form-container">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-submit">Login</button>
+            </form>
+            
+            {% if last_user_name %}
+            <a href="#" onclick="showQuickLogin(); return false;" class="back-link">← Back to Quick Login</a>
+            {% else %}
+            <a href="#" onclick="showRegisterForm(); return false;" class="back-link">Don't have an account? Register</a>
+            {% endif %}
+        </div>
+        
+        <!-- Register Form (Hidden initially) -->
+        <div id="registerFormView" class="form-container">
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" placeholder="Choose a username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerEmail">Email Address</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" placeholder="At least 6 characters" required autocomplete="new-password">
+                </div>
+                
+                <button type="submit" class="btn-submit">Create Account</button>
+            </form>
+            
+            {% if last_user_name %}
+            <a href="#" onclick="showQuickLogin(); return false;" class="back-link">← Back to Quick Login</a>
+            {% else %}
+            <a href="#" onclick="showLoginForm(); return false;" class="back-link">Already have an account? Login</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const lastUserEmail = '{{ last_user_email or "" }}';
+        const hasLastUser = lastUserEmail !== '';
+        
+        function showQuickLogin() {
+            document.getElementById('quickLoginView').style.display = 'block';
+            document.getElementById('loginFormView').classList.remove('active');
+            document.getElementById('registerFormView').classList.remove('active');
+        }
+        
+        function showLoginForm() {
+            if (hasLastUser) {
+                document.getElementById('quickLoginView').style.display = 'none';
+            }
+            document.getElementById('loginFormView').classList.add('active');
+            document.getElementById('registerFormView').classList.remove('active');
+        }
+        
+        function showRegisterForm() {
+            if (hasLastUser) {
+                document.getElementById('quickLoginView').style.display = 'none';
+            }
+            document.getElementById('registerFormView').classList.add('active');
+            document.getElementById('loginFormView').classList.remove('active');
+        }
+        
+        async function quickLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById('quickPassword').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email: lastUserEmail, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => window.location.href = '/upload', 1000);
+                } else {
+                    showAlert(data.message || 'Incorrect password', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'error');
+            }
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    setTimeout(() => window.location.href = '/upload', 1000);
+                } else {
+                    showAlert(data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'error');
+            }
+        }
+        
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            
+            if (password.length < 6) {
+                showAlert('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'register', username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('Account created! Redirecting...', 'success');
+                    setTimeout(() => window.location.href = '/upload', 1000);
+                } else {
+                    showAlert(data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.', 'error');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert alert-${type}`;
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 4000);
+        }
+        
+        // Initialize view
+        if (!hasLastUser) {
+            showLoginForm();
+        }
+    </script>
+</body>
+</html>

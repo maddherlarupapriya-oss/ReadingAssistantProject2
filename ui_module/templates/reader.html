@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reader - Reading Assistant</title>
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/opendyslexic');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .navbar {
+            background: #2196F3;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-brand { font-size: 24px; font-weight: bold; }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 5px; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        
+        .container { max-width: 900px; margin: 40px auto; padding: 20px; }
+        
+        .doc-title {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .controls-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 70px;
+            z-index: 50;
+        }
+        
+        .highlight-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-hint {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .control-group label {
+            font-weight: 500;
+            min-width: 80px;
+        }
+        
+        .control-group select,
+        .control-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+        }
+        
+        #voiceSelect {
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .text-display {
+            background: #fffef0;
+            padding: 30px;
+            border-radius: 10px;
+            line-height: 2;
+            font-size: 18px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            word-spacing: 0.2em;
+        }
+        
+        .text-display span {
+            display: inline;
+            padding: 2px 1px;
+            transition: background 0.15s ease;
+        }
+        
+        .text-display span.highlight {
+            background: #FFD700;
+            font-weight: bold;
+            padding: 4px 6px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .audio-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            bottom: 20px;
+            z-index: 50;
+        }
+        
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-weight: 500;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+        }
+        
+        .btn-success { background: #4CAF50; color: white; }
+        .btn-warning { background: #FF9800; color: white; }
+        .btn-secondary { background: #757575; color: white; }
+        .btn-info { background: #2196F3; color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #2196F3;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        #statusText {
+            color: #666;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .loading { display: inline-block; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📖 Reading Assistant</div>
+        <div class="nav-links">
+            <a href="{{ url_for('upload') }}">Dashboard</a>
+            <span style="color: rgba(255,255,255,0.7);">{{ user_email }}</span>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+
+    <div class="container">
+        <div class="doc-title">
+            <h1>{{ document.title }}</h1>
+            <p style="color: #666; margin-top: 10px;">{{ document.created_at }}</p>
+        </div>
+
+
+        <div class="controls-panel">
+            <h3 style="margin-bottom: 15px;">🎧 Reading Settings</h3>
+            
+            <div class="highlight-toggle">
+                <div class="toggle-label">
+                    <span>Enable Text Highlighting:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="highlightToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-hint">(Uses browser voices for perfect sync)</span>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Voice:</label>
+                <select id="voiceSelect">
+                    <option value="">Loading voices...</option>
+                </select>
+            </div>
+
+
+            <div class="control-group">
+                <label>Speed:</label>
+                <select id="speedSelect">
+                    <option value="0.5">0.5x (Very Slow)</option>
+                    <option value="0.75">0.75x (Slow)</option>
+                    <option value="1.0" selected>1.0x (Normal)</option>
+                    <option value="1.25">1.25x (Fast)</option>
+                    <option value="1.5">1.5x (Faster)</option>
+                    <option value="2.0">2.0x (Very Fast)</option>
+                </select>
+            </div>
+
+
+            <div class="control-group">
+                <label>Font Size:</label>
+                <input type="range" id="fontSizeSlider" min="14" max="32" value="18" style="width: 200px;">
+                <span id="fontSizeValue">18px</span>
+            </div>
+        </div>
+
+
+        <div id="textDisplay" class="text-display">
+            {{ document.text }}
+        </div>
+
+
+        <div class="audio-controls">
+            <div class="btn-row">
+                <button id="playBtn" class="btn btn-success">▶ Play</button>
+                <button id="pauseBtn" class="btn btn-warning" disabled>⏸ Pause</button>
+                <button id="rewindBtn" class="btn btn-info" disabled>⏪ -5s</button>
+                <button id="forwardBtn" class="btn btn-info" disabled>⏩ +5s</button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>⏹ Stop</button>
+            </div>
+            
+            <div class="progress-bar" id="progressBar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <p id="statusText">Ready to read! Press Play to start.</p>
+        </div>
+    </div>
+
+
+    <audio id="audioPlayer" style="display: none;"></audio>
+
+
+<script>
+const docId = '{{ document.id }}';
+const textDisplay = document.getElementById('textDisplay');
+const audioPlayer = document.getElementById('audioPlayer');
+
+
+const text = textDisplay.textContent.trim();
+const words = text.split(/\s+/);
+textDisplay.innerHTML = words.map((word, i) => 
+    `<span data-index="${i}">${word}</span>`
+).join(' ');
+
+
+const spans = textDisplay.querySelectorAll('span');
+
+
+// Mode controlled by toggle
+let highlightMode = true;
+let currentWordIndex = -1;
+let isPaused = false;
+
+
+// Web Speech API
+const synth = window.speechSynthesis;
+let utterance = null;
+let browserVoices = [];
+
+
+// Controls
+const playBtn = document.getElementById('playBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const rewindBtn = document.getElementById('rewindBtn');
+const forwardBtn = document.getElementById('forwardBtn');
+const stopBtn = document.getElementById('stopBtn');
+const progressFill = document.getElementById('progressFill');
+const statusText = document.getElementById('statusText');
+const voiceSelect = document.getElementById('voiceSelect');
+const highlightToggle = document.getElementById('highlightToggle');
+
+
+// Highlight toggle
+highlightToggle.addEventListener('change', function() {
+    highlightMode = this.checked;
+    if (highlightMode) {
+        loadBrowserVoices();
+        statusText.textContent = 'Highlight mode enabled - Perfect synchronization!';
+    } else {
+        loadEdgeVoices();
+    }
+    stopBtn.click();
+});
+
+
+// Load browser voices
+function loadBrowserVoices() {
+    browserVoices = synth.getVoices();
+    voiceSelect.innerHTML = '';
+    
+    const enVoices = browserVoices.filter(v => v.lang.startsWith('en'));
+    enVoices.forEach((voice, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+    });
+    
+    playBtn.disabled = false;
+}
+
+
+if (synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = () => {
+        if (highlightMode) loadBrowserVoices();
+    };
+}
+
+
+// Load Edge TTS voices
+function loadEdgeVoices() {
+    statusText.innerHTML = 'Loading Edge TTS... <span class="loading">⏳</span>';
+    playBtn.disabled = true;
+    
+    fetch('/api/edge-voices')
+        .then(r => r.json())
+        .then(data => {
+            voiceSelect.innerHTML = '';
+            if (data.voices && data.voices.length > 0) {
+                data.voices.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.value;
+                    option.textContent = v.label;
+                    voiceSelect.appendChild(option);
+                });
+                voiceSelect.value = 'en-US-AriaNeural';
+            }
+            return loadEdgeAudio();
+        });
+}
+
+
+async function loadEdgeAudio() {
+    const voice = voiceSelect.value;
+    const speed = document.getElementById('speedSelect').value;
+    
+    if (!voice) return;
+    
+    statusText.innerHTML = 'Loading audio... <span class="loading">⏳</span>';
+    
+    try {
+        const url = `/api/generate-audio/${docId}?voice=${voice}&speed=${speed}`;
+        audioPlayer.src = url;
+        await audioPlayer.load();
+        playBtn.disabled = false;
+        statusText.textContent = 'Ready! Press Play.';
+    } catch (error) {
+        statusText.textContent = 'Failed to load audio.';
+        console.error('Audio load error:', error);
+    }
+}
+
+
+// Font size
+const fontSizeSlider = document.getElementById('fontSizeSlider');
+const fontSizeValue = document.getElementById('fontSizeValue');
+
+
+fontSizeSlider.addEventListener('input', function() {
+    textDisplay.style.fontSize = this.value + 'px';
+    fontSizeValue.textContent = this.value + 'px';
+});
+
+
+// Play button
+playBtn.addEventListener('click', () => {
+    if (highlightMode) {
+        if (isPaused && synth.paused) {
+            synth.resume();
+            isPaused = false;
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+            rewindBtn.disabled = false;
+            forwardBtn.disabled = false;
+            stopBtn.disabled = false;
+            statusText.textContent = 'Reading...';
+        } else {
+            startLiveReading();
+        }
+    } else {
+        audioPlayer.play();
+        playBtn.disabled = true;
+        pauseBtn.disabled = false;
+        rewindBtn.disabled = false;
+        forwardBtn.disabled = false;
+        stopBtn.disabled = false;
+        statusText.textContent = 'Reading...';
+    }
+});
+
+
+pauseBtn.addEventListener('click', () => {
+    if (highlightMode) {
+        synth.pause();
+        isPaused = true;
+    } else {
+        audioPlayer.pause();
+    }
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    statusText.textContent = 'Paused';
+});
+
+
+rewindBtn.addEventListener('click', () => {
+    if (highlightMode) {
+        const newIndex = Math.max(0, currentWordIndex - 10);
+        skipToWord(newIndex);
+    } else {
+        audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5);
+    }
+});
+
+
+forwardBtn.addEventListener('click', () => {
+    if (highlightMode) {
+        const newIndex = Math.min(words.length - 1, currentWordIndex + 10);
+        skipToWord(newIndex);
+    } else {
+        audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 5);
+    }
+});
+
+
+stopBtn.addEventListener('click', () => {
+    if (highlightMode) {
+        synth.cancel();
+        isPaused = false;
+    } else {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+    }
+    clearHighlight();
+    currentWordIndex = -1;
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    rewindBtn.disabled = true;
+    forwardBtn.disabled = true;
+    stopBtn.disabled = true;
+    progressFill.style.width = '0%';
+    statusText.textContent = 'Stopped';
+});
+
+
+// Skip to specific word in highlight mode
+function skipToWord(targetIndex) {
+    if (targetIndex < 0 || targetIndex >= words.length) return;
+    
+    synth.cancel();
+    isPaused = false;
+    currentWordIndex = targetIndex;
+    
+    const remainingText = words.slice(targetIndex).join(' ');
+    
+    utterance = new SpeechSynthesisUtterance(remainingText);
+    
+    const selectedIndex = voiceSelect.value;
+    if (browserVoices[selectedIndex]) {
+        utterance.voice = browserVoices[selectedIndex];
+    }
+    
+    utterance.rate = parseFloat(document.getElementById('speedSelect').value);
+    
+    utterance.onboundary = (event) => {
+        if (event.name === 'word') {
+            const spokenText = remainingText.substring(0, event.charIndex);
+            const relativeWordCount = spokenText.split(/\s+/).length - 1;
+            const absoluteWordIndex = targetIndex + relativeWordCount;
+            
+            if (absoluteWordIndex >= 0 && absoluteWordIndex < words.length) {
+                currentWordIndex = absoluteWordIndex;
+                highlightWord(absoluteWordIndex);
+                progressFill.style.width = ((absoluteWordIndex / words.length) * 100) + '%';
+            }
+        }
+    };
+    
+    utterance.onstart = () => {
+        playBtn.disabled = true;
+        pauseBtn.disabled = false;
+        rewindBtn.disabled = false;
+        forwardBtn.disabled = false;
+        stopBtn.disabled = false;
+        statusText.textContent = 'Reading...';
+    };
+    
+    utterance.onend = () => {
+        clearHighlight();
+        playBtn.disabled = false;
+        pauseBtn.disabled = true;
+        rewindBtn.disabled = true;
+        forwardBtn.disabled = true;
+        stopBtn.disabled = true;
+        progressFill.style.width = '100%';
+        statusText.textContent = 'Finished!';
+    };
+    
+    synth.speak(utterance);
+}
+
+
+// Live Reading with Web Speech API
+function startLiveReading() {
+    synth.cancel();
+    clearHighlight();
+    currentWordIndex = -1;
+    isPaused = false;
+    
+    utterance = new SpeechSynthesisUtterance(text);
+    
+    const selectedIndex = voiceSelect.value;
+    if (browserVoices[selectedIndex]) {
+        utterance.voice = browserVoices[selectedIndex];
+    }
+    
+    utterance.rate = parseFloat(document.getElementById('speedSelect').value);
+    
+    utterance.onboundary = (event) => {
+        if (event.name === 'word') {
+            const spokenText = text.substring(0, event.charIndex);
+            const wordCount = spokenText.split(/\s+/).length - 1;
+            
+            if (wordCount >= 0 && wordCount < words.length) {
+                currentWordIndex = wordCount;
+                highlightWord(wordCount);
+                progressFill.style.width = ((wordCount / words.length) * 100) + '%';
+            }
+        }
+    };
+    
+    utterance.onstart = () => {
+        playBtn.disabled = true;
+        pauseBtn.disabled = false;
+        rewindBtn.disabled = false;
+        forwardBtn.disabled = false;
+        stopBtn.disabled = false;
+        statusText.textContent = 'Reading...';
+    };
+    
+    utterance.onend = () => {
+        clearHighlight();
+        playBtn.disabled = false;
+        pauseBtn.disabled = true;
+        rewindBtn.disabled = true;
+        forwardBtn.disabled = true;
+        stopBtn.disabled = true;
+        progressFill.style.width = '100%';
+        statusText.textContent = 'Finished!';
+        isPaused = false;
+    };
+    
+    synth.speak(utterance);
+}
+
+
+// Edge TTS progress bar only (no highlighting)
+audioPlayer.addEventListener('timeupdate', () => {
+    if (currentMode === 'edge' && audioPlayer.duration) {
+        progressFill.style.width = ((audioPlayer.currentTime / audioPlayer.duration) * 100) + '%';
+        // No highlighting in Edge TTS mode
+    }
+});
+
+
+audioPlayer.addEventListener('ended', () => {
+    playBtn.disabled = false;
+    pauseBtn.disabled = true;
+    rewindBtn.disabled = true;
+    forwardBtn.disabled = true;
+    stopBtn.disabled = true;
+    progressFill.style.width = '100%';
+    statusText.textContent = 'Finished!';
+    clearHighlight();
+});
+
+
+function highlightWord(index) {
+    clearHighlight();
+    if (index >= 0 && index < spans.length) {
+        spans[index].classList.add('highlight');
+        const rect = spans[index].getBoundingClientRect();
+        if (rect.top < 100 || rect.bottom > window.innerHeight - 100) {
+            spans[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+
+function clearHighlight() {
+    spans.forEach(s => s.classList.remove('highlight'));
+}
+
+
+// Handle voice/speed changes
+voiceSelect.addEventListener('change', () => {
+    if (!highlightMode) {
+        stopBtn.click();
+        loadEdgeAudio();
+    }
+});
+
+
+document.getElementById('speedSelect').addEventListener('change', () => {
+    if (!highlightMode) {
+        stopBtn.click();
+        loadEdgeAudio();
+    }
+});
+
+
+// Initial load
+loadBrowserVoices();
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "maddherlarupapriya@gmail.com": {
+    "email": "maddherlarupapriya@gmail.com",
+    "username": "rupa",
+    "password": "rupa123M",
+    "created_at": "2025-10-12T01:31:43.587320",
+    "preferences": {
+      "font_size": 21,
+      "reading_speed": 1,
+      "highlighting_enabled": true,
+      "line_spacing": 2,
+      "auto_handwriting": true
+    }
+  },
+  "rmaddherla@gmai.com": {
+    "email": "rmaddherla@gmai.com",
+    "username": "rupa2",
+    "password": "bplin123M",
+    "created_at": "2025-10-12T01:32:20.063012",
+    "preferences": {
+      "font_size": 22,
+      "reading_speed": 1.25,
+      "highlighting_enabled": true,
+      "line_spacing": 2,
+      "auto_handwriting": false
+    }
+  }
+}

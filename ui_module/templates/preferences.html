@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preferences - Reading Assistant</title>
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/opendyslexic');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .navbar {
+            background: #2196F3;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-brand { font-size: 24px; font-weight: bold; }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; padding: 8px 16px; border-radius: 5px; }
+        .nav-links a:hover { background: rgba(255,255,255,0.2); }
+        
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        
+        .pref-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 { margin-bottom: 10px; color: #2c3e50; }
+        .subtitle { color: #7f8c8d; margin-bottom: 30px; font-size: 16px; }
+        
+        .pref-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .pref-section:last-child { border-bottom: none; }
+        
+        .pref-section h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+        
+        .pref-option {
+            margin-bottom: 20px;
+        }
+        
+        .pref-option label {
+            display: block;
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .pref-option select,
+        .pref-option input[type="range"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+        }
+        
+        .pref-option input[type="range"] {
+            padding: 0;
+        }
+        
+        .range-value {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #ccc;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active { background: #4CAF50; }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: left 0.3s;
+        }
+        
+        .toggle-switch.active .toggle-slider { left: 33px; }
+        
+        .btn-save {
+            width: 100%;
+            padding: 18px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'OpenDyslexic', Arial, sans-serif;
+            transition: all 0.3s;
+        }
+        
+        .btn-save:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #4CAF50;
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">📖 Reading Assistant</div>
+        <div class="nav-links">
+            <a href="{{ url_for('upload') }}">Dashboard</a>
+            <span style="color: rgba(255,255,255,0.7);">{{ user_email }}</span>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="pref-card">
+            <h1>⚙️ Your Preferences</h1>
+            <p class="subtitle">Customize your reading experience</p>
+            
+            <div id="alertBox" class="alert hidden"></div>
+            
+            <form id="preferencesForm">
+                <div class="pref-section">
+                    <h3>📚 Reading Settings</h3>
+                    
+                    <div class="pref-option">
+                        <label>Default Font Size</label>
+                        <input type="range" id="fontSize" min="14" max="32" value="{{ preferences.get('font_size', 18) }}">
+                        <span class="range-value" id="fontSizeValue">{{ preferences.get('font_size', 18) }}px</span>
+                    </div>
+                    
+                    <div class="pref-option">
+                        <label>Default Reading Speed</label>
+                        <select id="readingSpeed">
+                            <option value="0.5" {% if preferences.get('reading_speed') == 0.5 %}selected{% endif %}>0.5x (Very Slow)</option>
+                            <option value="0.75" {% if preferences.get('reading_speed') == 0.75 %}selected{% endif %}>0.75x (Slow)</option>
+                            <option value="1.0" {% if preferences.get('reading_speed', 1.0) == 1.0 %}selected{% endif %}>1.0x (Normal)</option>
+                            <option value="1.25" {% if preferences.get('reading_speed') == 1.25 %}selected{% endif %}>1.25x (Fast)</option>
+                            <option value="1.5" {% if preferences.get('reading_speed') == 1.5 %}selected{% endif %}>1.5x (Faster)</option>
+                            <option value="2.0" {% if preferences.get('reading_speed') == 2.0 %}selected{% endif %}>2.0x (Very Fast)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="pref-section">
+                    <h3>🎨 Display Settings</h3>
+                    
+                    <div class="pref-option">
+                        <label>Enable Text Highlighting by Default</label>
+                        <div class="toggle-group">
+                            <div class="toggle-switch {% if preferences.get('highlighting_enabled', True) %}active{% endif %}" id="highlightToggle">
+                                <div class="toggle-slider"></div>
+                            </div>
+                            <span>Automatically highlight words while reading</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pref-option">
+                        <label>Line Spacing</label>
+                        <input type="range" id="lineSpacing" min="1.2" max="2.5" step="0.1" value="{{ preferences.get('line_spacing', 1.8) }}">
+                        <span class="range-value" id="lineSpacingValue">{{ preferences.get('line_spacing', 1.8) }}</span>
+                    </div>
+                </div>
+                
+                <div class="pref-section">
+                    <h3>🔤 Text Processing</h3>
+                    
+                    <div class="pref-option">
+                        <label>Auto-detect Handwriting</label>
+                        <div class="toggle-group">
+                            <div class="toggle-switch {% if preferences.get('auto_handwriting', False) %}active{% endif %}" id="handwritingToggle">
+                                <div class="toggle-slider"></div>
+                            </div>
+                            <span>Use advanced OCR for handwritten documents</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-save">💾 Save Preferences</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Range sliders
+        document.getElementById('fontSize').addEventListener('input', function() {
+            document.getElementById('fontSizeValue').textContent = this.value + 'px';
+        });
+        
+        document.getElementById('lineSpacing').addEventListener('input', function() {
+            document.getElementById('lineSpacingValue').textContent = this.value;
+        });
+        
+        // Toggle switches
+        document.getElementById('highlightToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('handwritingToggle').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+        
+        // Save preferences
+        document.getElementById('preferencesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const preferences = {
+                font_size: parseInt(document.getElementById('fontSize').value),
+                reading_speed: parseFloat(document.getElementById('readingSpeed').value),
+                highlighting_enabled: document.getElementById('highlightToggle').classList.contains('active'),
+                line_spacing: parseFloat(document.getElementById('lineSpacing').value),
+                auto_handwriting: document.getElementById('handwritingToggle').classList.contains('active')
+            };
+            
+            try {
+                const response = await fetch('/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(preferences)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('✓ Preferences saved successfully!');
+                    setTimeout(() => {
+                        window.location.href = '/upload';
+                    }, 1500);
+                } else {
+                    showAlert('Failed to save preferences. Please try again.');
+                }
+            } catch (error) {
+                showAlert('Network error. Please try again.');
+            }
+        });
+        
+        function showAlert(message) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = 'alert alert-success';
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 3000);
+        }
+    </script>
+</body>
+</html>
